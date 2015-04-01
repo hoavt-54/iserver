@@ -1,0 +1,13 @@
+org/iiinews/android/controller/SampleController.class
+org/iiinews/android/model/Article.class
+org/iiinews/android/serialization/JsonSerializationProcessor.class
+org/iiinews/android/serialization/SerializationProvider.class
+org/iiinews/android/Constants$Url.class
+org/iiinews/android/controller/ArticleController.class
+org/iiinews/android/model/BasedObject.class
+org/iiinews/android/Constants.class
+org/iiinews/android/config/Configuration.class
+org/iiinews/android/serialization/XmlSerializationProcessor.class
+org/iiinews/android/Main.class
+org/iiinews/android/Routes.class
+org/iiinews/android/Constants$Routes.class
