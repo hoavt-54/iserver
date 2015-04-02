@@ -50,6 +50,8 @@ public class ArticleController {
 	public static final String WORLD_NEWS_CACHE_KEY = "world";
 	public static final String SCIENCE_NEWS_CACHE_KEY = "science";
 	private Connection dbConnection;
+	private PreparedStatement preStm;
+	private Statement stm;
 	private String host;
 	private String passw;
 	HashMap<String, Source> sourceMap = new HashMap<>();
@@ -61,7 +63,7 @@ public class ArticleController {
 				dbConnection = DBConnection.getConnection(host, passw);
 				String sql = "SELECT * FROM sources" ;
 				// get all source first
-				PreparedStatement preStm = dbConnection.prepareStatement(sql);
+				preStm = dbConnection.prepareStatement(sql);
 				preStm.execute();
 				ResultSet sourceResults = preStm.getResultSet();
 				while(sourceResults.next()){
@@ -74,6 +76,8 @@ public class ArticleController {
 							source.setFb_page_id(sourceResults.getString(Source.SOURCE_FB_PAGE));
 					sourceMap.put(source.getId(), source);
 				}
+				sourceResults.close();
+				preStm.close();
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
 			}catch (Exception e) {
@@ -85,7 +89,7 @@ public class ArticleController {
 	{
 		List<Article> articles = new ArrayList<Article>();
 		//TODO later we do database here
-		String id = request.getHeader(Constants.Url.ARTICLE_ID, "No Blog ID supplied");
+		String id = request.getHeader(Constants.Url.ARTICLE_ID, "No article ID supplied");
 		System.out.println("controller handled this: " + id);
 		
 		String sql = "SELECT id, url, facebook_id, facebook_plugin_id, text_html FROM articles WHERE id in ( %s )";
@@ -94,7 +98,7 @@ public class ArticleController {
 		try {
 			if (dbConnection == null || dbConnection.isClosed())
 				dbConnection = DBConnection.getConnection(host, passw);
-			Statement stm = dbConnection.createStatement();
+			stm = dbConnection.createStatement();
 			ResultSet results = stm.executeQuery(sql);
 			while(results.next()){
 				Article	returnedArticle = new Article(results.getInt(Article.ID_FIELD), 
@@ -113,14 +117,25 @@ public class ArticleController {
 				returnedArticle.setTextHtml(results.getString(Article.TEXT_HTML));
 				articles.add(returnedArticle);
 			}
+			results.close();
+			stm.close();
 		}catch (Exception e) {
 			e.printStackTrace();
+			
+		}finally{
 			try {
-				dbConnection.close();
-			} catch (SQLException e1) {
-				e1.printStackTrace();
+				if (stm != null)
+					stm.close();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-			dbConnection = null;
+			
+			try {
+				if (dbConnection != null)
+					dbConnection.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 		
 		return articles;
@@ -623,7 +638,7 @@ public class ArticleController {
 					if (dbConnection == null || dbConnection.isClosed())
 						dbConnection = DBConnection.getConnection(host, passw);
 					//Statement stm = dbConnection.createStatement();
-					PreparedStatement preStm = dbConnection.prepareStatement(sql);
+					preStm = dbConnection.prepareStatement(sql);
 					if (!preStm.execute())
 						return responseData;
 					// get all source first
@@ -651,6 +666,7 @@ public class ArticleController {
 							data.setHomePage(homeNews.subList(0, 21));
 						else 
 							data.setHomePage(homeNews);
+						//articlesResults.close();
 					}
 					//get news for business
 					if (preStm.getMoreResults()){
@@ -662,6 +678,7 @@ public class ArticleController {
 							data.setBusiness(businessNews.subList(0, DEFAULT_ARTICLES_LIMIT));
 						else
 							data.setBusiness(businessNews);
+						//articlesResults.close();
 					}
 					//get news for community
 					if (preStm.getMoreResults()){
@@ -673,6 +690,7 @@ public class ArticleController {
 							data.setCommunity(comminityNews.subList(0, DEFAULT_ARTICLES_LIMIT));
 						else 
 							data.setCommunity(comminityNews);
+						//articlesResults.close();
 					}
 					//get news for education
 					if (preStm.getMoreResults()){
@@ -683,6 +701,7 @@ public class ArticleController {
 						if (articles.size() > DEFAULT_ARTICLES_LIMIT)
 							data.setEducation(articles.subList(0, DEFAULT_ARTICLES_LIMIT));
 						data.setEducation(articles);
+						//articlesResults.close();
 					}
 					//get news for entertainment
 					if (preStm.getMoreResults()){
@@ -694,6 +713,7 @@ public class ArticleController {
 							data.setEntertainment(articles.subList(0, DEFAULT_ARTICLES_LIMIT));
 						else
 							data.setEntertainment(articles);
+						//articlesResults.close();
 					}
 					//get news for heath
 					if (preStm.getMoreResults()){
@@ -705,6 +725,7 @@ public class ArticleController {
 							data.setHealth(articles.subList(0, DEFAULT_ARTICLES_LIMIT));
 						else
 							data.setHealth(articles);
+						//articlesResults.close();
 					}
 					//get news for life 
 					if (preStm.getMoreResults()){
@@ -716,6 +737,7 @@ public class ArticleController {
 							data.setLife(articles.subList(0, DEFAULT_ARTICLES_LIMIT));
 						else 
 							data.setLife(articles);
+						//articlesResults.close();
 					}
 					//get news for news
 					if (preStm.getMoreResults()){
@@ -727,6 +749,7 @@ public class ArticleController {
 							data.setNews(articles.subList(0, DEFAULT_ARTICLES_LIMIT));
 						else
 							data.setNews(articles);
+						//articlesResults.close();
 					}
 					// get news for opinions
 					if (preStm.getMoreResults()){
@@ -738,6 +761,7 @@ public class ArticleController {
 							data.setOpinions(articles.subList(0, DEFAULT_ARTICLES_LIMIT));
 						else
 							data.setOpinions(articles);
+						//articlesResults.close();
 					}
 					// get news for polictics
 					if (preStm.getMoreResults()){
@@ -749,6 +773,7 @@ public class ArticleController {
 							data.setPolitics(articles.subList(0, DEFAULT_ARTICLES_LIMIT));
 						else
 							data.setPolitics(articles);
+						//articlesResults.close();
 					}
 					//get news for sport
 					if (preStm.getMoreResults()){
@@ -760,6 +785,7 @@ public class ArticleController {
 							data.setSport(articles.subList(0, DEFAULT_ARTICLES_LIMIT));
 						else 
 							data.setSport(articles);
+						//articlesResults.close();
 					}
 					//get news for style
 					if (preStm.getMoreResults()){
@@ -771,6 +797,7 @@ public class ArticleController {
 							data.setStyle(articles.subList(0, DEFAULT_ARTICLES_LIMIT));
 						else 
 							data.setStyle(articles);
+						//articlesResults.close();
 					}
 					//get news for technology
 					if (preStm.getMoreResults()){
@@ -782,6 +809,7 @@ public class ArticleController {
 							data.setTech(articles.subList(0, DEFAULT_ARTICLES_LIMIT));
 						else
 							data.setTech(articles);
+						//articlesResults.close();
 					}
 					//get news for travel
 					if (preStm.getMoreResults()){
@@ -793,6 +821,7 @@ public class ArticleController {
 							data.setTravel(articles.subList(0, DEFAULT_ARTICLES_LIMIT));
 						else
 							data.setTravel(articles);
+						//articlesResults.close();
 					}
 					
 					//get news for science
@@ -805,6 +834,7 @@ public class ArticleController {
 							data.setScience(articles.subList(0, DEFAULT_ARTICLES_LIMIT));
 						else
 							data.setScience(articles);
+						//articlesResults.close();
 					}
 					
 					//get world news
@@ -816,15 +846,30 @@ public class ArticleController {
 						if (articles.size() > DEFAULT_ARTICLES_LIMIT)
 							data.setWorld(articles.subList(0, DEFAULT_ARTICLES_LIMIT));
 						data.setWorld(articles);
+						//articlesResults.close();
 					}
-				} catch (SQLException | ClassNotFoundException e) {
+					preStm.close();
+				} catch ( Exception e) {
 					e.printStackTrace();
+				}
+				finally{
 					try {
-						dbConnection.close();
-					} catch (SQLException e1) {
-						e1.printStackTrace();
+						if (preStm != null && !dbConnection.isClosed())
+							preStm.close();
+					} catch (Exception e2) {
+						e2.printStackTrace();
 					}
-					dbConnection = null;
+					
+					try {
+						if (preStm != null && !dbConnection.isClosed())
+							preStm.close();
+						
+						if (dbConnection != null && !dbConnection.isClosed())
+							dbConnection.close();
+						
+					} catch (Exception e2) {
+						e2.printStackTrace();
+					}
 				}
 		responseData.setTime(new Date().getTime());
 		responseData.setData(data);
@@ -851,6 +896,13 @@ public class ArticleController {
 		boolean isRefreshed = false;
 		String requestSignature = null;
 		HashMap<String, Source> sourceMap = new HashMap<>();
+		try {
+			if (dbConnection == null || dbConnection.isClosed())
+				dbConnection = DBConnection.getConnection(host, passw);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
 		if (dbConnection == null) {
 			return responseData;
 		}
@@ -993,7 +1045,7 @@ public class ArticleController {
 				dbConnection = DBConnection.getConnection(host, passw);
 			
 			//Statement stm = dbConnection.createStatement();
-			PreparedStatement preStm = dbConnection.prepareStatement(sql);
+			preStm = dbConnection.prepareStatement(sql);
 			if (!preStm.execute())
 				return responseData;
 			// get all source first
@@ -1007,19 +1059,27 @@ public class ArticleController {
 						source.setAvatarUrl(sourceResults.getString(Source.SOURCE_AVATAR_FIEDS));
 				sourceMap.put(source.getId(), source);
 			}
-			
+			sourceResults.close();
 			//get articles here
 			if (preStm.getMoreResults()){
 				articles = getArticlesFromResultSet(preStm.getResultSet(), sourceMap);
 			}
-		} catch (SQLException | ClassNotFoundException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
+		}finally{
 			try {
-				dbConnection.close();
-			} catch (SQLException e1) {
-				e1.printStackTrace();
+				if(preStm != null)
+					preStm.close();
+			} catch (Exception e2) {
+				e2.printStackTrace();
 			}
-			dbConnection = null;
+			
+			try {
+				if (dbConnection != null && !dbConnection.isClosed())
+					dbConnection.close();
+			} catch (Exception e2) {
+				e2.printStackTrace();
+			}
 		}
 		
 		
@@ -1057,6 +1117,8 @@ public class ArticleController {
 		
 		return responseData;
 	}
+	
+	
 	
 	
 	public static List<Article> getArticlesFromResultSet (ResultSet articlesResults, HashMap<String, Source> sourceMap) throws SQLException {
@@ -1121,21 +1183,6 @@ public class ArticleController {
 		if (source == null) return "";
 		else return String.format(" AND source_id = '%s'", source);
 	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 	
 	
 	

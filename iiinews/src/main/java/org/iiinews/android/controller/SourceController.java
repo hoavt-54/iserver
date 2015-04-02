@@ -3,7 +3,6 @@ package org.iiinews.android.controller;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,6 +16,7 @@ import com.whirlycott.cache.CacheManager;
 
 public class SourceController {
 	private Connection dbConnection;
+	private PreparedStatement preStm;
 	public static final long CACHE_TIME = 200000000L;
 	private static final String SOURCES_KEY = "all_sources";
 	private Cache c;
@@ -56,7 +56,7 @@ public class SourceController {
 			if (dbConnection == null || dbConnection.isClosed())
 				dbConnection = DBConnection.getConnection(host, passw);
 			//Statement stm = dbConnection.createStatement();
-			PreparedStatement preStm = dbConnection.prepareStatement(sql);
+			preStm = dbConnection.prepareStatement(sql);
 			if (!preStm.execute())
 				return returnedList;
 			// get all source first
@@ -71,18 +71,19 @@ public class SourceController {
 						source.setFb_page_id(sourceResults.getString(Source.SOURCE_FB_PAGE));
 					returnedList.add(source);
 			}
-		}catch (SQLException | ClassNotFoundException e) {
+			sourceResults.close();
+			preStm.close();
+		}catch (Exception e) {
 			e.printStackTrace();
+		}finally{
 			try {
-				dbConnection.close();
-			} catch (SQLException e1) {
-				e1.printStackTrace();
+				if (dbConnection != null && !dbConnection.isClosed())
+					dbConnection.close();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-			dbConnection = null;
 		}
-		catch (Exception e) {
-			e.printStackTrace();
-		}
+		
 		c.store(SOURCES_KEY, returnedList);
 		return returnedList;
 	}
