@@ -15,8 +15,6 @@ import com.whirlycott.cache.Cache;
 import com.whirlycott.cache.CacheManager;
 
 public class SourceController {
-	private Connection dbConnection;
-	private PreparedStatement preStm;
 	public static final long CACHE_TIME = 200000000L;
 	private static final String SOURCES_KEY = "all_sources";
 	private Cache c;
@@ -30,10 +28,8 @@ public class SourceController {
 		this.host = dbHost;
 		this.passw = dbHost;
 		try {
-			dbConnection = DBConnection.getConnection(dbHost, dbPasswd);
-			c = CacheManager.getInstance().getCache();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
+			
+				c = CacheManager.getInstance().getCache();
 		}catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -52,8 +48,9 @@ public class SourceController {
 		
 		returnedList  = new ArrayList<Source>();
 		String sql = "SELECT * FROM sources";
+		PreparedStatement preStm = null;
+		Connection dbConnection = null;
 		try {
-			if (dbConnection == null || dbConnection.isClosed())
 				dbConnection = DBConnection.getConnection(host, passw);
 			//Statement stm = dbConnection.createStatement();
 			preStm = dbConnection.prepareStatement(sql);

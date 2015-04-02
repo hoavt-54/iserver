@@ -49,9 +49,6 @@ public class ArticleController {
 	public static final String TRAVEL_NEWS_CACHE_KEY = "travel";
 	public static final String WORLD_NEWS_CACHE_KEY = "world";
 	public static final String SCIENCE_NEWS_CACHE_KEY = "science";
-	private Connection dbConnection;
-	private PreparedStatement preStm;
-	private Statement stm;
 	private String host;
 	private String passw;
 	HashMap<String, Source> sourceMap = new HashMap<>();
@@ -59,11 +56,12 @@ public class ArticleController {
 	public ArticleController (String host, String passw) {
 		this.host = host;
 		this.passw = passw;
+		Connection dbConnection = null;
 			try {
-				dbConnection = DBConnection.getConnection(host, passw);
+				 dbConnection = DBConnection.getConnection(host, passw);
 				String sql = "SELECT * FROM sources" ;
 				// get all source first
-				preStm = dbConnection.prepareStatement(sql);
+				PreparedStatement preStm = dbConnection.prepareStatement(sql);
 				preStm.execute();
 				ResultSet sourceResults = preStm.getResultSet();
 				while(sourceResults.next()){
@@ -82,6 +80,13 @@ public class ArticleController {
 				e.printStackTrace();
 			}catch (Exception e) {
 				e.printStackTrace();
+			}finally{
+				try {
+					if (dbConnection != null)
+						dbConnection.close();
+				} catch (Exception e2) {
+					e2.printStackTrace();
+				}
 			}
 	}
 	
@@ -91,7 +96,8 @@ public class ArticleController {
 		//TODO later we do database here
 		String id = request.getHeader(Constants.Url.ARTICLE_ID, "No article ID supplied");
 		System.out.println("controller handled this: " + id);
-		
+		Connection dbConnection = null;
+		Statement stm = null;
 		String sql = "SELECT id, url, facebook_id, facebook_plugin_id, text_html FROM articles WHERE id in ( %s )";
 		sql = String.format(sql, id);
 		System.out.println("query string: " + sql);
@@ -633,7 +639,8 @@ public class ArticleController {
 				"FROM articles " +
 				"WHERE category_id = 'world'" +
 				"ORDER BY point DESC LIMIT 60;" ;
-		
+			PreparedStatement preStm = null;
+			Connection dbConnection = null;
 				try {
 					if (dbConnection == null || dbConnection.isClosed())
 						dbConnection = DBConnection.getConnection(host, passw);
@@ -896,6 +903,7 @@ public class ArticleController {
 		boolean isRefreshed = false;
 		String requestSignature = null;
 		HashMap<String, Source> sourceMap = new HashMap<>();
+		Connection dbConnection = null; 
 		try {
 			if (dbConnection == null || dbConnection.isClosed())
 				dbConnection = DBConnection.getConnection(host, passw);
@@ -1039,6 +1047,7 @@ public class ArticleController {
 						"((comment_count + share_count + like_count + twitter_count) * category_weight * reputation/pow(UNIX_TIMESTAMP() - updated_time + 16*60*60, 4)) as point " + 
 						"FROM articles "  + getCategorySourceCondition(requestCategory, requestSource) +
 						" ORDER BY point DESC LIMIT 100;";
+			PreparedStatement preStm = null;
 		try {
 			
 			if (dbConnection == null || dbConnection.isClosed())
